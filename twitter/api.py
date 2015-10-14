@@ -180,7 +180,7 @@ class TwitterCall(object):
 
     def __init__(
             self, auth, format, domain, callable_cls, uri="",
-            uriparts=None, secure=True, timeout=None, gzip=False, retry=False):
+            uriparts=None, secure=True, timeout=None, gzip=False, retry=False, proxy=None):
         self.auth = auth
         self.format = format
         self.domain = domain
@@ -191,6 +191,7 @@ class TwitterCall(object):
         self.timeout = timeout
         self.gzip = gzip
         self.retry = retry
+        self.proxy = proxy
 
     def __getattr__(self, k):
         try:
@@ -304,6 +305,10 @@ class TwitterCall(object):
                 url_base = url_base.encode("utf-8")
                 for k in headers:
                     headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
+
+        proxy = urllib_request.ProxyHandler(self.proxy)
+        opener = urllib_request.build_opener(proxy)
+        urllib_request.install_opener(opener)
 
         req = urllib_request.Request(url_base, data=body, headers=headers)
         if self.retry:
@@ -482,7 +487,7 @@ class Twitter(TwitterCall):
     def __init__(
             self, format="json",
             domain="api.twitter.com", secure=True, auth=None,
-            api_version=_DEFAULT, retry=False):
+            api_version=_DEFAULT, retry=False, proxy=None):
         """
         Create a new twitter API connector.
 
@@ -524,7 +529,7 @@ class Twitter(TwitterCall):
         TwitterCall.__init__(
             self, auth=auth, format=format, domain=domain,
             callable_cls=TwitterCall,
-            secure=secure, uriparts=uriparts, retry=retry)
+            secure=secure, uriparts=uriparts, retry=retry, proxy=proxy)
 
 
 __all__ = ["Twitter", "TwitterError", "TwitterHTTPError", "TwitterResponse"]
