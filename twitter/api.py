@@ -193,6 +193,7 @@ class TwitterCall(object):
         self.retry = retry
         self.proxy = proxy
 
+
     def __getattr__(self, k):
         try:
             return object.__getattr__(self, k)
@@ -201,7 +202,7 @@ class TwitterCall(object):
                 return self.callable_cls(
                     auth=self.auth, format=self.format, domain=self.domain,
                     callable_cls=self.callable_cls, timeout=self.timeout,
-                    secure=self.secure, gzip=self.gzip, retry=self.retry,
+                    secure=self.secure, gzip=self.gzip, retry=self.retry, proxy=self.proxy,
                     uriparts=self.uriparts + (arg,))
             if k == "_":
                 return extend_call
@@ -306,10 +307,6 @@ class TwitterCall(object):
                 for k in headers:
                     headers[actually_bytes(k)] = actually_bytes(headers.pop(k))
 
-        proxy = urllib_request.ProxyHandler(self.proxy)
-        opener = urllib_request.build_opener(proxy)
-        urllib_request.install_opener(opener)
-
         req = urllib_request.Request(url_base, data=body, headers=headers)
         if self.retry:
             return self._handle_response_with_retry(req, uri, arg_data, _timeout)
@@ -321,6 +318,10 @@ class TwitterCall(object):
         if _timeout:
             kwargs['timeout'] = _timeout
         try:
+            proxy = urllib_request.ProxyHandler(self.proxy)
+            opener = urllib_request.build_opener(proxy)
+            urllib_request.install_opener(opener)
+
             handle = urllib_request.urlopen(req, **kwargs)
             if handle.headers['Content-Type'] in ['image/jpeg', 'image/png']:
                 return handle
